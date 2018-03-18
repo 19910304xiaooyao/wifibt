@@ -1,0 +1,1055 @@
+=====================================================================================================================
+初始化部分：
+=====================================================================================================================
+WinCreat(&SetMenuWin, &BTControlSubWin , NULL);
+_ATTR_SYS_SET_BT_DATA_ WIN BTControlSubWin = {
+
+    NULL,
+    NULL,
+
+    BTControlSubWinService,
+    BTControlSubWinKeyProc,
+    BTControlSubWinDisplay,
+
+    BTControlSubWinInit,
+    BTControlSubWinDeInit
+};
+	pWin->pgWinInit(pArg);
+		BTControlSubWinInit
+			BluetoothWinSvcStart
+				ThreadCreat(&pMainThread, &BlueToothThread, pArg); //DEBUG("@@@ create bluetooth thread Success @@@");
+				_ATTR_BLUETOOTHCONTROL_DATA_ EXT THREAD BlueToothThread =
+				{
+
+					NULL,
+					NULL,
+
+					BlueToothControlInit,
+					BlueToothControlService,
+					BlueToothControlDeInit,
+
+					NULL
+				};
+				pThread->pgThreadInit(pArg);
+					BlueToothControlInit
+						BlueToothIntInit();
+							void BlueToothIntInit(void)
+								IntRegister(BT_UART_INT_ID, BT_UARTInt);
+								IntRegister(BT_HCI_SERVER_INT_ID , phybusif_h5_data_process);  // 中断: hci
+								IntRegister(BT_SBC_PROCESS_INT_ID, AudioSbcEncodeIntProecss);
+    
+						bt_set_init_complete_hook(blueToothCC2564InitComplete);
+							bt_init_complete = bt_init_complete_hook;
+
+						BlueToothHwInit(&rtk8761a_hw_control);
+							bt_hw_control_t rtk8761a_hw_control =
+							{
+								Rtk8761aHwInit,
+								Rtk8761aHwPowerOn,
+								Rtk8761aHwPowerOff,
+								NULL,
+								NULL,
+								NULL,
+								NULL,
+								Rtk8761aHwGetPowerStatus,
+								NULL,
+								Rtk8761aHwRegisterPowerNotification,
+								Rtk8761aHwSetUartRecAbility,
+								Rtk8761aHwSetDevMac,
+								NULL,
+								NULL
+
+							};						
+							g_bt_hw_control = bt_hw_control;
+							if(g_bt_hw_control->init)
+							{
+								return g_bt_hw_control->init();
+								Rtk8761aHwInit
+									memset(&rtk8761apcb, 0, sizeof(_rtk8761aPcb_));
+							}						
+						power_on_config.bt_init_flag = BT_INIT_FLAG; //#define BT_INIT_FLAG (ENABLE_A2DP| ENABLE_HFP | ENABLE_SPP | ENABLE_AUTO_CONNECT)
+						BlueToothHwPowerOn(&power_on_config);
+							g_bt_hw_control->on(config);
+								Rtk8761aHwPowerOn
+									rtk8761a_power_up
+										BT_UARTInit(BT_UART_CH,24*1000*1000,115200,UART_DATA_8B,UART_ONE_STOPBIT,UART_EVEN_PARITY);
+										phybusif_init(&rtk8761a_hw_control);
+											IntRegister(BT_H5_TX_INT_ID , phybusif_h5_data_send);
+											IntEnable(BT_H5_TX_INT_ID);
+											pbuf_init();
+											phybusif_reset(&g_cb);
+											BT_Recv_Register(h5_recv);
+												UartContext.recv = func;
+											BT_Tx_Complete_Register(phybusif_output_complete);
+												UartContext.tx_complete = func;
+											g_cb.hw_conrtol = hw_control;
+											h5_open(&g_cb)//uart open
+									bt_init(0);
+										flag = 0;
+										bt_flag = flag;
+										BT_DEBUG("Enter bt_init\n");
+										lwbt_memp_init();
+										hci_init();
+										l2cap_init();
+										sdp_init();
+											l2cap_connect_ind(NULL, SDP_PSM,sdp_l2cap_connected_ind);
+												struct l2cap_pcb_listen *lpcb;
+												lpcb = lwbt_memp_malloc(MEMP_L2CAP_PCB_LISTEN);
+												lpcb->psm = psm;
+												lpcb->l2ca_connect_ind = l2ca_connect_ind; //sdp_l2cap_connected_ind
+												lpcb->state = L2CAP_LISTEN;
+										if(flag & ENABLE_A2DP)
+										{
+											avdtp_init();
+											avctp_init();
+										}
+										if(flag & ENABLE_CMD_COMPLETE)
+										{
+											hci_cmd_complete(command_complete_for_init);
+										}
+										else
+										{
+											hci_cmd_complete(NULL);
+										}
+										#ifdef HAVE_BLE
+										setup();
+										#endif
+										hci_pin_req(pin_req);
+										hci_link_key_not(link_key_not);
+										hci_link_key_request(link_key_requset);
+										hci_connection_complete(acl_conn_complete);
+										hci_req_remote_name_complete(req_remote_name_complete);
+										hci_auth_complete(auth_complete);
+										hci_user_confirmation_request(user_confirmation_request);
+
+										hci_set_io_capability(HCI_IO_CAPABILITY_NOINPUTNOOUTPUT);
+										BT_DEBUG("Leaving bt_init\n");
+									Rtk8761aHwDownInitScript();
+										struct hci_pcb *pcb;
+										hci_cmd_complete(rtk8761a_init_complete);
+											pcb->cmd_complete = cmd_complete;
+										Rtk8761aDownload_patchcode(data, iCurLen,iCurIndex );
+										hci_cmd_complete(NULL);
+									hci_cmd_complete(rtk8761a_init_complete);
+									Rtk8761aHwReset();
+										hci_reset();
+											hci_cmd_ass(p, HCI_RESET_OCF, HCI_HC_BB_OGF, HCI_RESET_PLEN);
+							bt_init(powerConfig->bt_init_flag |ENABLE_CMD_COMPLETE);//#define BT_INIT_FLAG (ENABLE_A2DP| ENABLE_HFP | ENABLE_SPP | ENABLE_AUTO_CONNECT)
+								hci_connection_complete(acl_conn_complete);
+								hci_req_remote_name_complete(req_remote_name_complete);
+								hci_auth_complete(auth_complete);
+								hci_user_confirmation_request(user_confirmation_request);
+									pcb->conn_complete = conn_complete;
+								hci_set_io_capability(HCI_IO_CAPABILITY_NOINPUTNOOUTPUT);
+							bt_start(BT_START_FLAG_DEFAULT);
+								hci_read_buffer_size();
+									hci_cmd_ass(p, HCI_R_BUF_SIZE_OCF, HCI_INFO_PARAM_OGF, HCI_R_BUF_SIZE_PLEN);
+								hci_set_event_mask(0x1FFFFFFFFFFFFFFF);
+								hci_write_default_link_policy_setting(POLICY_SETTING_ENABLE_SNIFF_MODE);
+								hci_read_bd_addr(read_bdaddr_complete);
+								hci_set_event_filter(0x01, 0x01, cod_lap_dun); /* Report only devices with a specific type of CoD */
+								hci_write_page_timeout(0x6000); /* 10.24s */
+								hci_write_cod(cod);
+								hci_change_local_name(bt_local_name, BT_LOCAL_NAME_MAX_LEN);
+								hci_write_inquiry_mode_command(0x02);
+								hci_write_simple_pairing_mode(0x01);
+								hci_write_scan_enable(0x03);
+								bt_init_complete();
+									SET_BTSTATE(BTState,BT_CC2564_INIT_COMPLETE);
+								hci_cmd_complete(command_complete); /* Initialization done, don't come back */
+							
+						BlueToothHwRegisterPowerNotification(blueToothPowerEvnetNotify);
+
+								
+						hci_acl_connnect_req(blueToothConnectReqProc); //pcb->acl_connect_req = acl_connect_req;
+						hci_acl_connected_notify(blueToothMsgACLConnected); //pcb->acl_connected = acl_connected;
+						hci_acl_disconnect_notify(blueToothMsgACLDisConnect); //pcb->acl_disconnect = acl_disconnect;
+
+
+======================================================================================================================
+main函數的主循環：
+======================================================================================================================
+_ATTR_OS_CODE_
+void OSStart(WIN **pWin, THREAD **pThread)
+{
+    void *pWinArg;
+
+    while(1)
+    {
+        *pWin = TaskInit(&pWinArg);//task adjust,call new task code,rturn main window pointer.
+        WinCreat((WIN *)NULL, *pWin, pWinArg);
+
+        while(1)
+        {
+            if (SysService() != RETURN_OK)
+            {
+                break;
+            }
+
+			/***********************************************************************************************************/
+            if (ThreadProcess(*pThread) != TRUE)		
+            {
+                break;
+            }
+			ThreadProcess
+				while(pThreadTemp != (THREAD*)NULL)
+				{
+
+					pThreadTemp->pgThreadProc(); // 链表：BlueToothControlService
+
+					pThreadTemp = pThreadTemp->Next;
+				}
+				函数1：
+				BlueToothControlService
+					
+					bt_time_serve();
+						if(systicknow >= systickprev+100)
+						{
+							systickprev = systicknow;
+
+							l2cap_tmr();
+								/* Step through all of the active pcbs */
+								for(pcb = l2cap_active_pcbs; pcb != NULL; pcb = pcb->next)
+									/* Step through any unresponded signals */
+									for(sig = pcb->unrsp_sigs; sig != NULL; sig = sig->next)
+									{
+									
+									}
+									/* Check configuration timer */
+									if(pcb->state == L2CAP_CONFIG)
+										/* Check if configuration timer is active */
+										if(pcb->cfg.cfgto > 0)
+											--pcb->cfg.cfgto; //l2cap_tmr: Configuration timer = %d pcb->cfg.cfgto
+											if(pcb->cfg.cfgto == 0)
+												/* Connection attempt failed. Disconnect */
+												l2ca_disconnect_req(pcb, NULL);
+												/* Notify the application that the connection attempt failed */
+												if(pcb->cfg.l2capcfg & L2CAP_CFG_IR)
+												{
+													L2CA_ACTION_CONN_CFM(pcb, L2CAP_CONN_CFG_TO, 0x0000, ret);
+												}
+												else
+												{
+													L2CA_ACTION_CONN_IND(pcb, ERR_OK, ret);
+												}
+												pcb->cfg.cfgto = L2CAP_CFG_TO; /* Reset timer */											
+											else if(L2CAP_CFG_TO/2 == pcb->cfg.cfgto)
+												l2ca_config_req(pcb,L2CAP_USER_FG_NULL);
+
+								
+						}
+					
+						if(is_sdp_disconnet)
+						{
+							devMac = get_last_connect_dev();
+							if(isAuth_complete == 1)
+							{
+								is_sdp_disconnet = 0;
+								isAuth_complete = 0;
+								devMac = devMac ? devMac : remote_mac;
+								avdtp_connect((struct bd_addr *)devMac, connect_result);
+									//avdtp connecting
+									l2cappcb = l2cap_new()
+									avdtp_notify_pcb.connected_result = connect_result; //BluetoothConnectResult
+									return l2ca_connect_req(l2cappcb, bdaddr, AVDTP_PSM, HCI_ALLOW_ROLE_SWITCH, avdtp_l2cap_connected_cfm);
+										pcb->l2ca_connect_cfm = l2ca_connect_cfm; //avdtp_l2cap_connected_cfm
+										l2cap_signal(pcb, L2CAP_CONN_REQ, 0, &(pcb->remote_bdaddr), data); /* Send l2cap_conn_req signal */
+									
+
+								sdp_disconnet_timer_pos = GetSysTick();
+							}
+					
+				
+					if(TRUE == GetMsg(MSG_BLUETOOTH_ACL_CONNECTED))
+					{
+						SET_BTSTATE(BTState,BT_ACL_CONNECTED);
+						BlueToothHwSleepDisable(NULL);
+						bt_discoverable_disable();
+							hci_write_scan_enable(0x00); //关闭scan
+					}
+				
+			/***********************************************************************************************************/
+            if (WinServiceProc(*pWin) != RETURN_OK)
+            {
+                break;
+            }
+			WinServiceProc
+				while (pWinTemp->Father != NULL) {      //handle the child window serivice program from the last child window.
+
+					(pWinTemp->pgWinService)();		// list链表: : BTControlSubWinService -> BluetoothScanWinService
+
+					pWinTemp = pWinTemp->Father;
+
+				}
+				函數1：
+				BTControlSubWinService
+					if(BtScanWinOpened == 0)
+						if (GetMsg(MSG_DIALOG_KEY_OK))
+							if (BtWinStatus == BT_WIN_STATUS_DELETE_DEV)/*delete a paired device*/ //來自BTControlSubWinKeyProc的事件
+								BlueToothDeletePairedDve((struct bd_addr *)gSysConfig.BtConfig.BtLinkKey[BTStationTreeInf.CurId].BdAddr);
+									hci_delete_link_key(&tmp_addr, 0x01);//delete all key
+										hci_cmd_ass(p, 0x12, HCI_HC_BB_OGF, HCI_CMD_HDR_LEN+1+7);
+									StationUpProc
+										if (BTStationTreeInf.DispTotalItem == 0) //means no paired devices,we need to scan neighborhood
+											if (gBTFisrtScan == TRUE)
+												BT_DEBUG("### [BT] We need to request scan neighberhood ###");
+												SendMsg(MSG_BT_SCAN_REQUEST); //$$$$$$
+						if(GetMsg(MSG_BT_SCAN_REQUEST) == TRUE)
+							BT_DEBUG("## [BT] Create scan win to scan...##");
+							WinCreat(&BTControlSubWin, &BlueToothScanWin, NULL);
+								_ATTR_SYS_SET_BT_CODE_ WIN BlueToothScanWin =
+								{
+									NULL,
+									NULL,
+
+									BluetoothScanWinService,             //window service handle function.
+									BluetoothScanWinKeyProc,             //window key service handle function.
+									BluetoothScanWinPaint,               //window display service handle function.
+										ScanStationItemInfoInit
+										bt_scan(BlueToothScanResult);
+											scan_result = scan_result_hook; //BlueToothScanResult
+											hci_inquiry(0x009E8B33, 0x04, 0x00, inquiry_complete); // 0x04 = 4*1.28s,  0x00 indicate that always scan before time out
+												pcb->inq_complete = inq_complete; //inquiry_complete
+												hci_cmd_ass(p, HCI_INQUIRY_OCF, HCI_LINK_CTRL_OGF, HCI_INQUIRY_PLEN);
+											scan_state = SCAN_WORKING;
+										BtWinStatus = BT_WIN_STATUS_SCAN;
+
+									BluetoothScanWinInit,                //window initial handle function.
+									BluetoothScanWinDeInit,              //window auti-initial handle function.
+
+								};							
+				
+			/***********************************************************************************************************/
+            if (WinKeyProc(*pWin) != RETURN_OK)
+            {
+                break;
+            }
+				RetVal = (pWinTemp->pgWinKeyScan)(); // list链表: BTControlSubWinKeyProc -> BluetoothScanWinKeyProc
+				函数1：
+				BTControlSubWinKeyProc
+					case KEY_VAL_FFW_SHORT_UP:  //delete parid device
+						if(BtWinStatus == BT_WIN_STATUS_IDLE)
+						{
+							BtWinStatus =  BT_WIN_STATUS_DELETE_DEV;
+							TaskArg.Dialog.Button = DIALOG_BUTTON_NO;
+							TaskArg.Dialog.TitleID = SID_WARNING;
+							TaskArg.Dialog.ContentID = SID_BT_DELETE_DEV;
+							WinCreat(&BTControlSubWin, &DialogWin, &TaskArg);
+								_ATTR_DIALOGBOX_DATA_ WIN DialogWin = {
+									
+									NULL,
+									NULL,
+									
+									DialogService,               //dialog window service function
+									DialogKey,                   //dialog window key service function
+										case KEY_VAL_PLAY_SHORT_UP:
+										case KEY_VAL_MENU_SHORT_UP:
+											if (ButtonSel == DIALOG_BUTTON_YES)
+											{
+												SendMsg(MSG_DIALOG_KEY_OK);
+											}
+											else
+											{
+												SendMsg(MSG_DIALOG_KEY_CANCEL);
+											}
+											WinDestroy(&DialogWin);
+											RetVal = 1;
+											break;
+										case KEY_VAL_FFD_SHORT_UP:
+										case KEY_VAL_FFW_SHORT_UP:
+											if (ButtonSel == DIALOG_BUTTON_YES)
+											{
+												ButtonSel = DIALOG_BUTTON_NO;
+											}
+											else
+											{
+												ButtonSel = DIALOG_BUTTON_YES;
+											}
+											SendMsg(MSG_DIALOG_DISPLAY_BUTTON);
+											break;
+									DialogDisplay,               //dialog window display service function
+									
+									DialogInit,                  //dialog window initial function
+										SendMsg(MSG_DIALOG_DISPLAY_ALL);
+									DialogDeInit                 //dialog window auti-initial function
+									
+								};							
+						}
+					case KEY_VAL_PLAY_SHORT_UP: //scan bt device
+						DEBUG("[BT] we will create scansun win");				
+						WinCreat(&BTControlSubWin, &BlueToothScanWin, NULL);
+						_ATTR_SYS_SET_BT_CODE_ WIN BlueToothScanWin =
+						{
+							NULL,
+							NULL,
+
+							BluetoothScanWinService,             //window service handle function.
+								
+							BluetoothScanWinKeyProc,             //window key service handle function.\
+								case KEY_VAL_MENU_SHORT_UP: //connect paried device / connect another paried device.
+
+									for (res = BtScanRes; res != NULL; res = res->next)
+									{
+										if (i == ItemTemp)
+										{
+											break;
+										}
+
+										i++;
+									}							
+								
+									BtWinStatus = BT_WIN_STATUS_CONNECTING;
+									memcpy(gSysConfig.BtConfig.LastConnectMac, gSysConfig.BtConfig.BtLinkKey[ItemTemp].BdAddr, 6);
+									bt_a2dp_connect((struct bd_addr *)gSysConfig.BtConfig.LastConnectMac, BluetoothConnectResult);
+										l2cappcb = l2cap_new()；
+										l2ca_connect_req(l2cappcb, bdaddr, SDP_PSM, HCI_ALLOW_ROLE_SWITCH, l2cap_connected);
+											bd_addr_set(&(pcb->remote_bdaddr),bdaddr);
+											pcb->	 = SDP_PSM;
+											pcb->l2ca_connect_cfm = l2cap_connected;
+											pcb->scid = l2cap_cid_alloc(); //L2CAP_MIN_CID <-> L2CAP_MAX_CID
+											pcb->cfg.l2capcfg |= L2CAP_CFG_IR; /* We are the initiator of this connection */
+											lp_connect_req(bdaddr, role_switch); /* Create ACL link w pcb state == CLOSED ;
+																				  * the Link Manager to create a connection to the Bluetooth device
+																				  * with the BD_ADDR specified by the command parameters.
+																				  */
+												struct hci_link *link = hci_new();
+												link->link_type = HCI_CONNECT_TYPE_ACL;
+												SET_HCI_FLAG(link->link_flag,HCI_FLAG_IR);
+												bd_addr_set(&(link->bdaddr), bdaddr);
+												/* Check if module has been discovered in a recent inquiry */
+												for(inqres = pcb->ires; inqres != NULL; inqres = inqres->next)
+													page_scan_repetition_mode = inqres->psrm;
+													page_scan_mode = inqres->psm;
+													clock_offset = inqres->co;
+												else
+													page_scan_repetition_mode = 0x01; /* Assuming worst case: time between
+																					   * successive page scans starting
+																					   * <= 2.56s
+																					   */
+													page_scan_mode = 0x00; /* Assumes the device uses mandatory scanning, most
+																			* devices use this. If no conn is established, try
+																			* again w this parm set to optional page scanning
+																			*/
+													clock_offset = 0x00;   /* If the device was not found in a recent inquiry
+																			* this  information is irrelevant 
+																			*/
+												p = pbuf_alloc(PBUF_RAW, HCI_CREATE_CONN_PLEN, PBUF_RAM));
+												p = hci_cmd_ass(p, HCI_CREATE_CONN_OCF, HCI_LINK_CTRL_OGF, HCI_CREATE_CONN_PLEN); /* Assembling command packet */
+												((uint16 *)p->payload)[5] = HCI_PACKET_TYPE;
+												((uint8 *)p->payload)[12] = page_scan_repetition_mode;
+												((uint8 *)p->payload)[13] = page_scan_mode;
+												((uint16 *)p->payload)[7] = clock_offset;
+												((uint8 *)p->payload)[16] = allow_role_switch;
+												phybusif_output(p, p->tot_len); // send Create Connection Command
+												
+												//通过uart h5 中断接收event
+												hci_event_input: Conn successfully completed
+												bdaddr = (void *)(((uint8 *)p->payload)+3); /* Get the Bluetooth address */
+												link_type = ((uint8 *)p->payload)[9];
+												link->conhdl = *((uint16 *)(((uint8 *)p->payload)+1));
+												link->link_type = link_type;
+												SET_HCI_FLAG(link->link_flag,HCI_BR_EDR_LINK);
+												HCI_EVENT_CONN_COMPLETE(pcb,bdaddr,ret); /* Allow applicaton to do optional configuration of link */
+													acl_conn_complete
+												LWBT_DEBUGF(HCI_EV_DEBUG, _DBG_INFO_, ("hci_event_input: Calling lp_connect_cfm\n"));
+												link->encrypt_mode = ((uint8 *)p->payload)[10];
+												hci_read_remote_features(link->conhdl);
+												ENCRYPTION_CHANGE = 0;	
+												HCI_EVENT_ACL_CONNECTED(pcb, 0, bdaddr);
+													((pcb)->acl_connected(result,bdaddr))
+														blueToothMsgACLConnected
+															uint16 *p = (uint16*)((char *)bdaddr -2);
+															bt_connect_handle = *p;
+															SendMsg(MSG_BLUETOOTH_ACL_CONNECTED); //通知BlueToothControlService函数进一步处理
+												HCI_SEND_EVENT(pcb,HCI_APP_EVENT_ACL_CONNECTED,(uint8*)bdaddr, 6,ERR_OK);
+													 (pcb)->hci_app_event_handler(event_type, parameter, param_size, err);
+											
+											
+										connect_result = connect_result_hook; //BluetoothConnectResult
+						BluetoothScanWinPaint,               //window display service handle function.
+
+						BluetoothScanWinInit,                //window initial handle function.
+							bt_scan(BlueToothScanResult);
+						BluetoothScanWinDeInit,              //window auti-initial handle function.
+
+					};
+
+
+					
+			/***********************************************************************************************************/
+            WinPaintProc(*pWin);
+				while(pWinTemp->Son != NULL)
+				{
+					if (WinPaintCheckPaintAllHook())
+					{
+						(pWinTemp->pgWinPaint)();   //=>>>>>>>>>>>>>>>>  BTControlSubWinDisplay
+						BTControlSubWinDisplay
+					}
+					pWinTemp = pWinTemp->Son;
+				}			
+			
+
+        }
+        //end the main window.
+        WinDestroy(*pWin);
+    }
+
+}
+
+=======================================================================================================================
+* 中斷處理：																										  *
+=======================================================================================================================
+phybusif_h5_data_process
+	PBUF *skb;
+	skb = pbuf_dequeue((PBUF**)&g_cb.h5_unread)
+		h5_complete_rx_pkt(&g_cb, skb);
+			struct h5_struct *h5 = &g_h5;
+			hci_recv_frame
+				case HCI_ACLDATA_PKT:
+					hci_acl_input(skb);
+						//hci_acl_input: Forward ACL packet to higher layer p->tot_len = 16
+						l2cap_input(p, &(link->bdaddr));
+							//Reassembles the packet, parses the header and forward it to the upper layer or the signal handler.
+							/* L2CAP segmentation */
+							#define L2CAP_ACL_START 0x02
+								...
+							#define L2CAP_ACL_CONT 0x01
+								...
+							
+							/* Handle packet */
+							switch(inseg->l2caphdr->cid)
+								case L2CAP_NULL_CID:
+								case L2CAP_SIG_CID:
+									l2cap_process_sig(inseg->p, inseg->l2caphdr, bdaddr);
+										
+										/* Check if this is a response/reject signal, and if so, find the matching request */
+										if(sighdr->code % 2)											
+											l2cap_process_sig: Response/reject signal received id = 1 code = 3
+										else
+											//l2cap_process_sig: Request signal received id = 2 code = 4
+											//l2cap_process_sig: Request signal received id = 5 code = 6
+										
+										switch(sighdr->code)
+											case L2CAP_CMD_REJ:
+											case L2CAP_CONN_REQ:
+												psm = ((uint16 *)p->payload)[0];
+												/* Search for a listening pcb */										
+												for(lpcb = l2cap_listen_pcbs; lpcb != NULL; lpcb = lpcb->next)
+													if(lpcb->psm == psm)
+													/* Found a listening pcb with the correct PSM */
+												
+												/* If no matching pcb was found, send a connection rsp neg (PSM) */
+												if(lpcb == NULL)
+													ret = l2cap_signal(pcb, L2CAP_CONN_RSP, sighdr->id, &(pcb->remote_bdaddr), data);
+												else
+													pcb = l2cap_new();
+													pcb->state = L2CAP_CONFIG;
+													pcb->callback_arg = lpcb->callback_arg;
+													pcb->l2ca_connect_ind = lpcb->l2ca_connect_ind; //sdp_l2cap_connected_ind
+													
+													//l2cap_process_sig: A connection request was received. Send a response
+													ret = l2cap_signal(pcb, L2CAP_CONN_RSP, sighdr->id, &(pcb->remote_bdaddr), data);
+													if (ret == ERR_OK && (sighdr->code % 2) == 0)													
+														"l2cap_signal: Registering sent request signal with id = %d code = %d\n"													
+													else //error													
+														"l2cap_signal: Deallocating sent response/reject signal with id = %d code = %d\n"												
+														//Deallocating sent response/reject signal with id = 3 code = 3	
+														
+														
+											case L2CAP_CONN_RSP: ////說明：這邊都是建立L2CAP通路引起的中斷，比如avdtp_connect 、bt_a2dp_connect
+												case L2CAP_CONN_SUCCESS:
+													//l2cap_process_sig: Conn_rsp_sucess, status 0
+													pcb->state = L2CAP_CONFIG;
+													/* If initiator send a configuration request */
+													if(pcb->cfg.l2capcfg & L2CAP_CFG_IR)
+													{
+														l2ca_config_req(pcb,L2CAP_USER_FG_NULL);
+															case L2CAP_OPEN:
+															case L2CAP_CONFIG:
+																l2cap_config_req: state = L2CAP_CONFIG
+																/* Send config request signal */ //触发配置请求
+																ret = l2cap_signal(pcb, L2CAP_CFG_REQ, 0, &(pcb->remote_bdaddr), p);
+														pcb->cfg.l2capcfg |= L2CAP_CFG_OUT_REQ;
+													}													
+												case L2CAP_CONN_PND:
+													//l2cap_process_sig: Conn_rsp_pnd, status 2
+														/* Disable rtx and enable ertx */
+														sig->rtx = 0;
+														sig->ertx = L2CAP_ERTX;													
+												default:
+											case L2CAP_CFG_REQ:
+												//--------- bt_a2dp_connect
+												//Congfiguration request, flags = 0
+												//Handle configuration request
+													//Siglen = 4
+													//Type of action bit = 0
+													//Type = 1							
+													//Length = 2
+												
+												//----------avdtp_connect
+												//Congfiguration request, flags = 0												
+												//dcid = 0x51, pcb->scid = 0x51, pcb->dcid = 0xc0												
+												//Handle configuration request
+												
+													//Siglen = 8												
+													//Type of action bit = 0												
+													//Type = 1												
+													//Length = 2
+													//case L2CAP_CFG_MTU:
+														//Out MTU = 895
+													
+													//Siglen = 4
+													//Type of action bit = 0
+													//Type = 2
+													//Length = 2
+													//case L2CAP_FLUSHTO:
+														//In flush timeout = 65535
+												
+												//l2cap_process_sig: Send response to configuration request												
+												
+												switch(L2CAP_OPTH_TYPE(opthdr))												
+													case L2CAP_CFG_MTU:
+														//l2cap_process_sig: Out MTU = 48
+														pcb->cfg.outmtu = ((uint16 *)p->payload)[1];
+														//l2cap_process_sig: Send response to configuration request
+														ret = l2cap_signal(pcb, L2CAP_CFG_RSP, pcb->ursp_id, &(pcb->remote_bdaddr), data);
+														if (ret == ERR_OK && (sighdr->code % 2) == 0)
+															"l2cap_signal: Registering sent request signal with id = %d code = %d\n"
+														else //error
+															"l2cap_signal: Deallocating sent response/reject signal with id = %d code = %d\n"
+
+														
+													case L2CAP_FLUSHTO:
+														//In flush timeout = 65535
+														pcb->cfg.influshto = ((uint16 *)p->payload)[1];
+														break;
+													case L2CAP_QOS:
+											case L2CAP_CFG_RSP:
+												//l2cap_process_sig: Outgoing configuration result == 0 continuation flag == 0
+												case L2CAP_CFG_SUCCESS:
+													//l2cap_process_sig: Successfull outgoing configuration
+													pcb->state = L2CAP_OPEN;
+													if (pcb->cfg.l2capcfg & L2CAP_CFG_IR)
+														L2CA_ACTION_CONN_CFM(pcb, L2CAP_CONN_SUCCESS, 0x0000, ret); 													
+															第一种注册函数: l2cap_connected, 在bt_a2dp_connect函数里面注册；
+															//pcb->l2ca_connect_cfm = l2cap_connected;
+															(pcb)->l2ca_connect_cfm((pcb)->callback_arg,(pcb),(result),(status))
+																l2cap_connected
+																	//l2cap_connected: LINE: 960 l2cap_connected: L2CAP connected pcb->state = 5
+																	/* Tell L2CAP that we wish to be informed of a disconnection request */
+																	l2cap_disconnect_ind(l2cappcb, l2cap_disconnected_ind);
+																		pcb->l2ca_disconnect_ind = l2ca_disconnect_ind; //l2cap_disconnected_ind
+																	switch(l2cap_psm(l2cappcb))
+																		case SDP_PSM:
+																			//l2cap_connected: SDP L2CAP configured. Result = 0
+																			l2cap_recv(l2cappcb, sdp_recv);
+																				pcb->l2ca_recv = l2ca_recv; //sdp_recv
+																			/*
+																			 * sdp_service_search_attrib_req():
+																			 *
+																			 * Combines the capabilities of the SDP_ServiceSearchRequest and the
+																			 * SDP_ServiceAttributeRequest into a single request. Contains both a service search
+																			 * pattern and a list of attributes to be retrieved from service records that match
+																			 * the service search pattern.
+																			 */																		
+																			ret = sdp_service_search_attrib_req(sdppcb, 0xFFFF, ssp, sizeof(ssp), attrids, sizeof(attrids),
+																												sdp_attributes_recv, NULL, 0);
+																				/* Allocate packet for PDU hdr + service search pattern + max attribute byte count + attribute id list + continuation state */
+																				p = pbuf_alloc(PBUF_RAW, SDP_PDUHDR_LEN+ssplen+2+attrlen+1+len, PBUF_RAM);
+																				pcb->tid = sdp_next_transid(); /* Set transaction id */
+																				sdphdr = p->payload;
+																				sdphdr->pdu = SDP_SSA_PDU;
+																				sdphdr->id = htons(pcb->tid);
+																				sdphdr->len = htons(ssplen + 2 + attrlen + 1+len);
+																				/* Add service search pattern to packet */
+																				memcpy(((uint8 *)p->payload) + SDP_PDUHDR_LEN, ssp, ssplen);
+																				/* Add maximum attribute count to packet */
+																				*((uint16 *)(payload + SDP_PDUHDR_LEN + ssplen)) = htons(max_abc);
+																				/* Add attribute id data element sequence to packet */
+																				memcpy(payload + SDP_PDUHDR_LEN + ssplen + 2, attrids, attrlen);
+																				pcb->attributes_searched = attributes_searched; /* Set callback */ //sdp_attributes_recv
+																				SDP_REG(&sdp_pcbs, pcb); /* Register request */
+																					_ATTR_LWBT_BSS_ struct sdp_pcb *sdp_pcbs;
+																					do {
+																						npcb->next = *pcbs;
+																						*pcbs = npcb;
+																					} while(0)
+																				ret = l2ca_datawrite(pcb->l2cappcb, p);
+																					_l2ca_datawrite
+																						_l2cap_write
+																							lp_acl_write
+																								_phybusif_output(q, aclhdr->len + q->len, func);
+															第二种注册函数：avdtp_connect里面注册avdtp_l2cap_connected_cfm
+															avdtp_l2cap_connected_cfm
+																if(result == L2CAP_CONN_SUCCESS)
+																	if(pcb->psm == AVDTP_PSM)
+																		if(a2dp_pcbs->l2cappcb == NULL)
+																			l2cap_recv(pcb, avdtp_Cmd_recv);
+																			pcb->l2ca_recv = l2ca_recv; //avdtp_Cmd_recv
+																			a2dp_pcbs->l2cappcb = pcb;
+																			l2cap_disconnect_ind(pcb, avdtp_lp_disconnected);
+																				pcb->l2ca_disconnect_ind = l2ca_disconnect_ind; //avdtp_lp_disconnected
+																			//avdtp control channle conneced
+																			SystickTimerStart(&AvdtpDiscoverTimer);
+																				_ATTR_LWBT_DATA_
+																					SYSTICK_LIST AvdtpDiscoverTimer =
+																					{
+																						NULL,
+																						0,
+																						//200,
+																						50,
+																						0,
+																						avdtp_discover,
+																					};
+													else
+														L2CA_ACTION_CONN_IND(pcb, ERR_OK, ret);
+														(pcb)->l2ca_connect_ind((pcb)->callback_arg,(pcb),(err))
+															//第一种回调
+															sdp_l2cap_connected_ind
+																l2cap_disconnected_ind: L2CAP disconnected
+																if(pcb->psm == SDP_PSM)
+																	l2cap_recv(pcb, sdp_recv);
+																		pcb->l2ca_recv = l2ca_recv; //pcb, sdp_recv
+																	l2cap_disconnect_ind(pcb, sdp_lp_disconnected);
+																		pcb->l2ca_disconnect_ind = l2ca_disconnect_ind; //sdp_lp_disconnected
+															
+															
+													
+												case L2CAP_CFG_UNACCEPT:
+												case L2CAP_CFG_REJ:
+												case L2CAP_CFG_UNKNOWN:
+											case L2CAP_DISCONN_REQ:
+												/* Handle disconnection request */
+												ret = l2cap_signal(pcb, L2CAP_DISCONN_RSP, sighdr->id, &(pcb->remote_bdaddr), data);
+												pcb->state = L2CAP_CLOSED;
+												//l2cap_process_sig: Disconnection request
+												L2CA_ACTION_DISCONN_IND(pcb,ERR_OK,ret);
+												(pcb)->l2ca_disconnect_ind((pcb)->callback_arg,(pcb),(err))
+													sdp_lp_disconnected
+														sdp_lp_disconnected: L2CAP disconnected
+														sdp_l2cap = NULL;
+														l2cap_close(l2cappcb);
+												
+											case L2CAP_DISCONN_RSP:
+												L2CA_ACTION_DISCONN_CFM(pcb,ret); /* NOTE: Application should now close the connection */
+												ret = (pcb)->l2ca_disconnect_cfm((pcb)->callback_arg,(pcb))
+													l2cap_disconnected_cfm
+														if (pcb->psm == SDP_PSM
+															if(is_find_a2dp == 1)
+																is_find_a2dp = 0;
+																is_sdp_disconnet = 1;
+															
+											case L2CAP_ECHO_REQ:
+											case L2CAP_ECHO_RSP:
+											case L2CAP_INFO_REQ:
+											case L2CAP_INFO_RSP:
+											default:
+												/* Alloc size of reason in cmd rej */
+												ret = l2cap_signal(NULL, L2CAP_CMD_REJ, sighdr->id, bdaddr, data);
+								case L2CAP_CONNLESS_CID:
+								case L2CAP_CID_ATTRIBUTE_PROTOCOL:
+								case L2CAP_CID_SIGNALING_LE:
+								case L2CAP_CID_SECURITY_MANAGER_PROTOCOL:
+								default:
+									//Forward packet to higher layer								
+									//Remote BD address: 0xd8:0xd4:0x3c:0x75:0x1c:0x84								
+									/* Forward packet to higher layer */
+									L2CA_ACTION_RECV(inseg->pcb,inseg->p,ERR_OK,ret);
+										(ret = (pcb)->l2ca_recv((pcb)->callback_arg,(pcb),(p),(err))) //l2cap_recv(pcb, avctp_recv); l2cap_recv(pcb, avdtp_Cmd_recv) l2cap_recv(l2cappcb, sdp_recv);
+										第一种回调: sdp_recv
+											switch(sdphdr->pdu)
+												case SDP_ERR_PDU:
+												case SDP_SS_PDU: /* Client request */
+												case SDP_SSR_PDU: /* Server response */
+												case SDP_SA_PDU:
+												case SDP_SAR_PDU:
+												case SDP_SSA_PDU:
+													//sdp_recv: Service search attribute request
+													/*
+													 * sdp_service_search_attrib_rsp():
+													 *
+													 * Sends a response that contains a list of attributes (both attribute ID and
+													 * attribute value) from the service records that match the requested service search
+													 * pattern.
+													 */													
+													ret = sdp_service_search_attrib_rsp(pcb, p, sdphdr);
+														l2ca_datawrite
+														
+													
+												case SDP_SSAR_PDU:
+													//sdp_recv: Service search attribute response
+													/* Find the original request */
+													for(sdppcb = sdp_pcbs; sdppcb != NULL; sdppcb = sdppcb->next)
+													{
+														if (sdppcb->tid == ntohs(sdphdr->id))													
+															/* Callback function for a service search attribute response */
+															SDP_ACTION_ATTRIB_SEARCHED(sdppcb, i, p);
+																((pcb)->attributes_searched((pcb)->callback_arg,(pcb),(attribl_bc),(p))) //pcb->attributes_searched = attributes_searched; /* Set callback */ 
+																//主要這裡有好幾種回調函數
+																//1、sdp_attributes_recv
+																sdp_attributes_recv //sdp_attributes_recv	bt_ip_dt_source.c (F:\WORK\Iot\RKNanoD_MP3_SONY\Common\Codec\BlueTooth\lwbt\a2dp_source)	41
+																	a2dp_version = get_profile_version(attribl_bc,p->payload, 0x110D, &offset);
+																	a2dp_version = 0x102
+																	ret = sdp_service_search_attrib_req(sdppcb, 0xFFFF, ssp, sizeof(ssp), attrids, sizeof(attrids),avrcp_sdp_attributes_recv, NULL, 0);
+																//2、avrcp_sdp_attributes_recv
+																	uint8 len = *((uint8 *)p->payload+attribl_bc);
+																	if(len != 0)
+																		uint8 ssp[] = {0x35, 0x03, 0x19, 0x11, 0x0e}; /* Service search pattern with AudioSink*/
+																		uint8 attrids[] = {0x35, 0x09, 0x09, 0x00, 0x01, 0x09, 0x00, 0x09, 0x09, 0x03, 0x11}; /* Attribute IDs to search for in data element*/
+																		sdp_service_search_attrib_req(sdppcb, 0xFFFF, ssp, sizeof(ssp), attrids, sizeof(attrids),avrcp_sdp_attributes_recv, buf, len);
+																		return;
+																	avrcp_version_tg = get_profile_version(avrcp_buf_sdp_len,avrcp_buf_sdp, 0x110c, &tg_offset);
+																	if (avrcp_version_tg != 0)
+																	{
+																		avrcp_version_tg = get_profile_version(avrcp_buf_sdp_len - tg_offset, avrcp_buf_sdp + tg_offset, 0x110e, &tg_avrcp_version_offset);
+																		featrue = get_profile_version(avrcp_buf_sdp_len - tg_offset, avrcp_buf_sdp + tg_offset, 0x0311, &offset);
+																		g_remote_tg_support_feature = featrue;
+																		printf("g_remote_tg_support_feature = 0x%02x\n", g_remote_tg_support_feature);
+																		//g_remote_tg_support_feature = 0x02
+																	}
+																	g_remote_avrcp_version = (avrcp_version_ct>avrcp_version_tg) ? avrcp_version_ct:avrcp_version_tg;
+																	printf("g_remote_avrcp_version = 0x%02x\n", g_remote_avrcp_version);
+																	//g_remote_avrcp_version = 0x103
+																	updata_profileversion_to_sysconfig(&sdppcb->l2cappcb->remote_bdaddr,g_remote_a2dp_version,g_remote_avrcp_version );
+																		gSysConfig.BtConfig.BtLinkKey[i].A2dpVersion = a2dpverion;
+																		gSysConfig.BtConfig.BtLinkKey[i].AvrcpVersion = avrcpversion;																	
+																	updata_tg_supportfeature_to_sysconfig(&sdppcb->l2cappcb->remote_bdaddr, g_remote_tg_support_feature);
+																		SendMsg(MSG_BLUETOOTH_LINK_KEY_NOTIFY);
+																		gSysConfig.BtConfig.BtLinkKey[i].Tg_SupportFeature = feature;
+																	is_find_a2dp = 1;
+																	l2ca_disconnect_req(sdppcb->l2cappcb, l2cap_disconnected_cfm);
+																		pcb->l2ca_disconnect_cfm = l2ca_disconnect_cfm; //l2cap_disconnected_cfm
+																		ret = l2cap_signal(pcb, L2CAP_DISCONN_REQ, 0, &(pcb->remote_bdaddr), data);
+																
+										第一种回调：avdtp_Cmd_recv
+											avdtp cmd=0x01, mssage type=0x02
+											avdtp cmd=0x02, mssage type=0x02
+											avdtp cmd=0x03, mssage type=0x02
+											avdtp cmd=0x06, mssage type=0x02
+											switch(a2dphdr->signal_id)
+												case AVDTP_DISCOVER:
+													switch(message_tpye)
+														case AVDTP_MSG_TYPE_COMMAND:
+														case AVDTP_MSG_TYPE_ACCEPT:
+														case AVDTP_MSG_TYPE_GEN_REJECT:
+														case AVDTP_MSG_TYPE_REJECT:
+															avdtp_recv_rsp = 1;
+															if(avdtp_recv_cmd == 0)
+																//avdtp_get_capabilities_cmd(a2dp_pcbs->l2cappcb, NULL,NULL);
+																avdtp_cmd(a2dp_pcbs->l2cappcb, NULL, NULL,AVDTP_GET_CAPABILITIES);
+												case AVDTP_GET_ALL_CAPABILITIES:
+												case AVDTP_GET_CAPABILITIES:
+													switch(message_tpye)
+														case AVDTP_MSG_TYPE_COMMAND:
+														case AVDTP_MSG_TYPE_ACCEPT:
+															avdtp_recv_rsp = 2;
+															if(avdtp_recv_cmd == 0)
+																if(((uint8 *)p->payload)[3] == AVDTP_AUDIO_CODEC_SBC)
+																	avdtp_Save_Remote_Codec_info(config_Data);																	
+																		pcb = a2dp_pcbs;
+																		pcb->Remotecodec.MediaCodecType = Cap_Data->MediaCodecType;
+																		//pcb->Remotecodec.Sampling_Frequency = (Cap_Data->SF_CM >> 4);
+																		pcb->Remotecodec.Sampling_Frequency = (Cap_Data->SF_CM & 0xF0);
+																		pcb->Remotecodec.Channel_Mode = (Cap_Data->SF_CM & 0xF);
+																		//pcb->Remotecodec.Block_Length = (Cap_Data->BL_BS_AM >> 4);
+																		pcb->Remotecodec.Block_Length = (Cap_Data->BL_BS_AM& 0xF0);
+																		//pcb->Remotecodec.Subbands = ((Cap_Data->BL_BS_AM >> 2)& 0x3);
+																		pcb->Remotecodec.Subbands = (Cap_Data->BL_BS_AM & 0x0C);
+																		pcb->Remotecodec.Allocation_Method = (Cap_Data->BL_BS_AM & 0x3);
+																		pcb->Remotecodec.MinimumBitpoolValue = Cap_Data->MinimumBitpoolValue;
+																		pcb->Remotecodec.MaximumBitpoolValue = Cap_Data->MaximumBitpoolValue;
+													
+																		Bitpooltemp = Cap_Data->MaximumBitpoolValue;
+																		Bitpooltemp = (Bitpooltemp > 0x35) ? 0x35 : Bitpooltemp;
+																		a2dp_pcbs->Remotecodec.MaximumBitpoolValue = Bitpooltemp;
+																	
+																		Codec_info:																	
+																		Channel_Mode: 15																	
+																		Block_Length: 240																	
+																		Subbands: 12																	
+																		MinimumBitpoolValue: 2																	
+																		MaximumBitpoolValue: 53					
+																	avdtp_set_configuration_cmd(pcb, p,NULL);
+																		configuration_cmd->MPT = ((3 << 4) | (0<< 2) | AVDTP_MSG_TYPE_COMMAND);
+																		configuration_cmd->SIRFA = AVDTP_SET_CONFIGURATION;
+																		configuration_cmd->Acp_SEID = (a2dp_pcbs->Remotecodec.Int_SEID << 2);
+																		configuration_cmd->Int_SEID = (a2dp_pcbs->select_seid << 2);
+																		a2dp_pcbs->local_sep[a2dp_pcbs->select_seid-1].InUse = AVDTP_SEPID_INUSE;
+																		configuration_cmd->ServiceCategory = AVDTP_MEDIA_TRANSPORT;
+																		configuration_cmd->LOSC = 0;
+
+																		configuration_cmd->ServiceCategory1 = AVDTP_MEDIA_CODEC;
+																		configuration_cmd->LOSC1 = 6;
+																		configuration_cmd->MediaType = a2dp_pcbs->local_sep[a2dp_pcbs->select_seid-1].Media_Type;
+																		configuration_cmd->MediaCodecType = AVDTP_AUDIO_CODEC_SBC;													
+																		... ...
+																		l2ca_datawrite(pcb, set_configuration_cmd_pbuf);
+																	
+																	
+														case AVDTP_MSG_TYPE_GEN_REJECT:
+														case AVDTP_MSG_TYPE_REJECT:
+												case AVDTP_SET_CONFIGURATION:
+													switch(message_tpye)
+														case AVDTP_MSG_TYPE_COMMAND:
+														case AVDTP_MSG_TYPE_ACCEPT:
+															avdtp_recv_rsp = 3;
+															if(avdtp_recv_cmd == 0)
+																avdtp_cmd(a2dp_pcbs->l2cappcb, NULL, NULL,AVDTP_OPEN);
+															avdtp_State_s = AVDTP_STATE_CONFIGURED;														
+														case AVDTP_MSG_TYPE_GEN_REJECT:
+														case AVDTP_MSG_TYPE_REJECT:
+												case AVDTP_GET_CONFIGURATION:
+												case AVDTP_OPEN:
+													switch(message_tpye)
+														case AVDTP_MSG_TYPE_COMMAND:
+														case AVDTP_MSG_TYPE_ACCEPT:
+															avdtp_recv_rsp = 4;
+															if((avdtp_State_s == AVDTP_STATE_CONFIGURED) || (avdtp_State_s == AVDTP_STATE_STREAMING))
+															{
+																avdtp_State_s = AVDTP_STATE_OPEN;
+
+															   // printf("avdtp mediaset \r\n");
+																SystickTimerStart(&AvdtpMediaSetUpTimer);
+																	avdtp_setup_meida_channel
+																		l2ca_connect_req(l2cappcb_media, &a2dp_pcbs->l2cappcb->remote_bdaddr, AVDTP_PSM, HCI_ALLOW_ROLE_SWITCH, avdtp_l2cap_connected_cfm);
+
+																avdtp_sendMessage(pcb,avdtp_State_s,avctp_startTimer);
+																	avctp_startTimer
+																		if(initiator == AVCTP_CONN_CONNECTED)   //avctp profile has connected successfully .
+																			return;																		
+																		SystickTimerStart(&InitiateAvrcpConnTimer);
+																			avctp_InitiateConn
+																				SystickTimerStop(&InitiateAvrcpConnTimer);
+
+																
+															}														
+														
+											
+											
+
+							
+				case HCI_EVENT_PKT:
+					hci_event_input(skb);
+						//Event code 
+						case HCI_COMMAND_COMPLETE:
+						case HCI_COMMAND_STATUS:
+						case HCI_LINK_KEY_NOTIFICATION:
+						case HCI_LINK_KEY_RESQUEST:
+							// The Link Key Request event is used to indicate that a Link Key is required for the connection with the device specified in BD_ADDR.
+							// 
+						case HCI_INQUIRY_COMPLETE:
+							LWBT_DEBUG("hci_event_input: Inquiry complete, 0x%x %s\n", ((uint8 *)p->payload)[0], hci_get_error_code(((uint8 *)p->payload)[0]));
+							HCI_EVENT_INQ_COMPLETE(pcb,((uint8 *)p->payload)[0],1, ret);
+								(pcb)->inq_complete((pcb)->callback_arg,(pcb),(pcb)->ires,(result), (complete))
+									inquiry_complete
+										LWBT_DEBUGF(LWBT_BT_DT, _DBG_INFO_, ("dev name:%s,mac:%02x-%02x-%02x-%02x-%02x-%02x,cod:%02x-%02x-%02x\n", \
+										tmpres->name,tmpres->bdaddr.addr[0],tmpres->bdaddr.addr[1],tmpres->bdaddr.addr[2], \
+										tmpres->bdaddr.addr[3],tmpres->bdaddr.addr[4],tmpres->bdaddr.addr[5],tmpres->cod[0],\
+										tmpres->cod[1],tmpres->cod[2] \
+
+						case HCI_INQUIRY_RESULT:
+							for(i=0; i<((uint8 *)p->payload)[0]; i++) //掃描到多個設備
+						case HCI_EXTENDED_INQUIRY_RESULT_EVENT:
+						case HCI_INQUIRY_RESULT_RSSI_EVENT:
+						
+						case HCI_AUTHENTICATION_COMPLETE:
+						case HCI_ENCRYPTION_CHANGE:
+							lp_connect_cfm(&link->bdaddr, link->encrypt_mode, ERR_OK); /* Notify L2CAP */
+								PSM = 0x1
+								scid = 0x50
+								encrypt mode = 0x0					
+							HCI_EVENT_ACL_AUTH_COMPLETE(pcb, ((uint8 *)p->payload)[0]);
+								auth_complete result = 0 
+								isAuth_complete = 1;
+								SendMsg(MSG_BT_AUTH_OK);
+				case HCI_SCODATA_PKT:
+					//_A2DP_SINK_
+					hci_sco_input(skb);
+
+
+					
+					
+================================================================================================================================
+timer 定时器
+================================================================================================================================
+_ATTR_LWBT_CODE_
+void avdtp_discover(void)
+{
+    if(avdtp_State_s == AVDTP_STATE_IDLE && avdtp_recv_cmd == 0)
+    {
+        avdtp_discover_cmd(a2dp_pcbs->l2cappcb);
+			cmd->SIRFA = AVDTP_DISCOVER;
+			ret = l2ca_datawrite(pcb, discover_cmd_pbuf);		
+        SystickTimerStart(&AvdtpCheckStateTimer);
+    }
+
+
+    SystickTimerStop(&AvdtpDiscoverTimer);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Baseband:
+	Role: Master (0x55-55-20-52-de-8c)
+	Channel: 53 - 2455 MHz
+	Clock: 0x00003d54
+	FLOW: Go
+	TYPE: DM1
+	LT_ADDR: 1
+	SEQN: 0
+	ARQN: 1
+	L2CAP Flow: Go
+	Logical Link ID: L2CAP start or no fragmentation
+	Payload Length: 12
+	Decrypted by Bluetooth ComProbe: Yes
+L2CAP:
+	PDU Length: 8							 //低字節 驅動代碼端
+	Channel ID: 0x0001  (Signaling)
+	Code: Connection Request
+	Identifier: 1
+	Command Length: 4
+	Protocol/Service Multiplexer: SDP
+	Source Channel ID: 0x0050                //高字節 驅動代碼端
